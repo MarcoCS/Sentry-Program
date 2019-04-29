@@ -64,11 +64,25 @@ void loop() {
     digitalWrite(Ready, HIGH); // When this pin is high, it means that the arduino is currently executing a command
     parsedAngle = Serial.parseFloat();  // Angle which the Pi has sent
     lcd.clear();
-    if (70 > parsedAngle > 0) { // Debug value is 100.0
+    if (parsedAngle < 0) { // Debug value is 100.0
       mpu6050.update();  // update rotation values
+      printf("Turn right:", 0, 0);
+      lcd.print(-parsedAngle);
+      targetAngle = parsedAngle + mpu6050.getAngleZ(); // Get Target angle by finding sum of parsedAngle and current angle
+      while (targetAngle < mpu6050.getAngleZ()) {
+        Drive.writeMicroseconds(2000);
+        mpu6050.update();
+        printf("Remaining:", 0, 1);
+        lcd.print(-(targetAngle - mpu6050.getAngleZ()));
+      }
+      shoot();
+    }
+    if (70 > parsedAngle > 0) { 
+      mpu6050.update();
       printf("Turn left:", 0, 0);
       lcd.print(parsedAngle);
-      targetAngle = parsedAngle + mpu6050.getAngleZ(); // Get Target angle by finding sum of parsedAngle and current angle
+      targetAngle = parsedAngle + mpu6050.getAngleZ();
+      Serial.println(targetAngle);
       while (targetAngle > mpu6050.getAngleZ()) {
         Drive.writeMicroseconds(1000);
         mpu6050.update();
@@ -77,22 +91,9 @@ void loop() {
       }
       shoot();
     }
-    if (parsedAngle < 0) { 
-      mpu6050.update();
-      printf("Turn right:", 0, 0);
-      lcd.print(-parsedAngle);
-      targetAngle = parsedAngle + mpu6050.getAngleZ();
-      Serial.println(targetAngle);
-      while (targetAngle < mpu6050.getAngleZ()) {
-        Drive.writeMicroseconds(2000);
-        mpu6050.update();
-        printf("Remaining:", 0, 1);
-        lcd.print(targetAngle - mpu6050.getAngleZ());
-      }
-      shoot();
-    }
     if (parsedAngle >= 70 || parsedAngle == 0) { // Raspberry Pi will send a value of 100.0 to indicate no targets identified
       lcd.clear();
+      Drive.writeMicroseconds(1500);
       printf("Targets N/A", 0, 0);
     }
   }
